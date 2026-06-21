@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>運動紀錄日記</title>
+    <style>
+        /* CSS Reset & 基礎設定 */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --text-main: #f5f5f7;
+            --text-sub: #86868b;
+            --accent-color: #0a84ff;
+            --rpe-color: #ff9f0a;
+            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro TC", "PingFang TC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            /* 隱藏滾動條，維持 App 乾淨視覺 */
+            -ms-overflow-style: none;  
+            scrollbar-width: none;  
+            overscroll-behavior-y: none;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 滾動容器設定 - 實現一天一頁 */
+        .scroll-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        /* 單頁 (Day) 佈局 */
+        .page {
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            padding: 5vh 20px 3vh 20px;
+            position: relative;
+        }
+
+        /* 頂部標題區 */
+        .header {
+            margin-bottom: 15px;
+        }
+        .day-badge {
+            display: inline-block;
+            background: rgba(10, 132, 255, 0.2);
+            color: var(--accent-color);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .sport-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+            letter-spacing: 0.5px;
+        }
+        .datetime {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        /* 照片佔位區 */
+        .photo-area {
+            flex-shrink: 0;
+            height: 28vh;
+            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        .photo-text {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .photo-text span { font-size: 2rem; }
+
+        /* 內容資訊卡片 */
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* 強度指標 RPE */
+        .rpe-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 159, 10, 0.1);
+            padding: 12px 16px;
+            border-radius: 16px;
+        }
+        .rpe-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+        .rpe-score {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--rpe-color);
+        }
+
+        /* 分隔線 */
+        .divider {
+            height: 1px;
+            background-color: rgba(255,255,255,0.1);
+            margin: 4px 0;
+        }
+
+        /* 內容區塊 */
+        .info-block h3 {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin: 0 0 6px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-block p {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* 底部提示滑動動畫 */
+        .scroll-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            opacity: 0.6;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-10px) translateX(-50%); }
+            60% { transform: translateY(-5px) translateX(-50%); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="scroll-container">
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 1</div>
+            <h1 class="sport-title">羽球雙打</h1>
+            <p class="datetime">2026/3/29 12:00-14:00</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 3/29 運動照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">4 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>羽球 2 小時不間斷。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>運動後手非常酸，且隔天腳也酸到不行，推測是太久沒運動所致。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>技術與心得</h3>
+                <p>察覺到自己在打球時的姿勢可能有錯誤，需要調整。整體感覺很喜歡，朋友也很耐心教導我，是一次愉快的運動體驗。</p>
+            </div>
+        </div>
+        <div class="scroll-hint">向上滑動查看下一天 ↓</div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 2</div>
+            <h1 class="sport-title">跑步＋走路</h1>
+            <p class="datetime">2026/4/5 21:41-23:00</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 4/5 軌跡截圖]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">跑 6/10 走 1/10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>以八分速跑 12 分鐘，接著走路 1 小時。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>跑步時感覺非常喘，小腿有微緊的狀況，可能與運動前沒有充分熱身有關。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>運動心得</h3>
+                <p>其實本身不喜歡跑步，是因為朋友約一起跑想說就從今天開始紀錄。穿著 adizero evo sl 跑鞋，結果只跑了 1.5 公里就不行了，覺得自己體力超弱。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 3</div>
+            <h1 class="sport-title">走路</h1>
+            <p class="datetime">2026/4/6 20:00-20:30</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 4/6 運動照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">1 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>走路半小時。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>因為前一天跑步沒熱身也沒拉筋，今天腳超級酸、超級痛。本來今天想跑起來，但因為肌肉痠痛完全沒辦法跑。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>技術與心得</h3>
+                <p>透過這次的身體反饋，深刻體悟到「運動一定要記得熱身和拉筋」的重要性。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 4</div>
+            <h1 class="sport-title">跑步機爬坡</h1>
+            <p class="datetime">2026/4/8 18:25-18:45</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 4/8 跑步機照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">4 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>坡度設定 10、速度 4.5，持續 20 分鐘。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>爬坡的當下覺得很累、很熱，但是對身體沒什麼負擔，運動後沒有覺得特別酸痛。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>運動心得</h3>
+                <p>在跑步機上跟去外面慢跑比起來偏向無聊，但優點是有冷氣吹，而且旁邊有其他陌生人一起運動，反而會激勵到自己。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 5</div>
+            <h1 class="sport-title">羽球單打</h1>
+            <p class="datetime">2026/4/11 16:00-18:00</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 4/11 羽球館照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">3 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>羽球 2 小時不間斷。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>這次打完球後手部會感到酸痛，但整體的運動感受比之前舒服很多。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>技術進步與心得</h3>
+                <p>感覺比起上次進步了許多，已經能順利打到後面的球，帶來了成就感。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 6</div>
+            <h1 class="sport-title">居家瑜珈</h1>
+            <p class="datetime">2026/4/12 01:00-01:30</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 4/12 瑜珈墊照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">3 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>跟著 YouTube 影片學瑜珈，進行伸展與核心訓練。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>發現自己的筋本身就蠻軟的，但是在核心肌群方面很差，無法支撐太久，這是未來需要加強的地方。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>運動心得</h3>
+                <p>蠻喜歡瑜伽這項運動的，優點是不需要出門，在家裡就可以達到運動的效果。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 7</div>
+            <h1 class="sport-title">白沙屯媽祖進香</h1>
+            <p class="datetime">2026/4/18 09:25-16:30</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 4/18 沿途照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">6 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>從彰化徒步走到台中，中間休息 1 小時，平均配速為 9 分/公里。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>幾乎全程都是走路，大約走兩三小時後腳開始酸。中途休息後要再起身繼續走時，出現腳軟差點走不動的狀況。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>運動心得</h3>
+                <p>前一晚只睡了一小時，睡眠不足對體力有明顯影響。不過可能剛好這陣子有開始培養運動習慣，整體負荷還算可以接受，隔天沒有痠痛感。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 8</div>
+            <h1 class="sport-title">羽球雙打</h1>
+            <p class="datetime">2026/5/10 13:00-16:00</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 5/10 羽球拍照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">4 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>羽球 3 小時不間斷，與一群朋友輪流對打。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>運動過程很累、很喘，練完回家後手非常酸。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>技術與心得</h3>
+                <p>這次特別練習了「殺球的揮拍動作」，雖然剛學還沒辦法馬上正確應用。此外也觀察到，打球厲害的人幾乎可以站著不動就能打到球，是很棒的學習目標。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 9</div>
+            <h1 class="sport-title">慢跑</h1>
+            <p class="datetime">2026/5/28 18:30-20:30</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 5/28 夜跑照片]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">8 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>從頭到尾維持 8-9 分速跑步。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>過程中非常累但不會喘，大約跑到 3-4 公里後開始覺得受不了，會一直出現撐不下去的感覺。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>心理狀態與心得</h3>
+                <p>這次靠著意志力強迫自己一定要繼續跑完。發現自己有慢慢愛上跑步了！而且看到河濱公園有很多人在一起跑，覺得自己並不孤單。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page">
+        <div class="header">
+            <div class="day-badge">Day 10</div>
+            <h1 class="sport-title">走路</h1>
+            <p class="datetime">2026/5/30 10:00-14:00</p>
+        </div>
+        <div class="photo-area">
+            <div class="photo-text"><span>📷</span> [請在此處插入 5/30 皮克敏截圖]</div>
+        </div>
+        <div class="content-card">
+            <div class="rpe-row">
+                <span class="rpe-label">強度指標 (RPE)</span>
+                <span class="rpe-score">2 / 10</span>
+            </div>
+            <div class="info-block">
+                <h3>訓練內容</h3>
+                <p>悠閒散步 4 小時，中間包含吃午餐 1 小時。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>身體對話</h3>
+                <p>是一次很舒服的散步，身體有稍微流汗，但完全不會覺得累。</p>
+            </div>
+            <div class="divider"></div>
+            <div class="info-block">
+                <h3>運動心得</h3>
+                <p>因為要陪媽媽玩「皮克敏」遊戲所以被抓去散步，意外發現媽媽的體力很好，比我還會走路。</p>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+</body>
+</html>
