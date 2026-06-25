@@ -2,561 +2,306 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>運動紀錄日記 - 簡報版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PTT - [爆卦] Carbanak駭客集團事件衝擊與啟示</title>
     <style>
-        /* CSS Reset & 基礎設定 */
+        :root {
+            /* 現代化 PTT 色系 */
+            --bg-color: #0a0a0c;
+            --app-bar-bg: rgba(20, 20, 24, 0.85);
+            --text-main: #d1d1d1;
+            --text-dim: #808080;
+            --ansi-yellow: #f8e71c;
+            --ansi-cyan: #5ac8fa;
+            --ansi-green: #34c759;
+            --ansi-red: #ff3b30;
+            --ansi-white: #ffffff;
+            
+            /* UI 參數 */
+            --font-family: 'SF Pro TC', 'SF Pro Text', 'PingFang TC', 'Helvetica Neue', 'Microsoft JhengHei', monospace;
+            --nav-height: 56px;
+            --bottom-bar-height: 60px;
+        }
+
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
-        
-        :root {
-            /* 明亮模式色系 (Light Mode) */
-            --bg-color: #f2f2f7; /* 質感淺灰背景 */
-            --card-bg: #ffffff;  /* 純白卡片 */
-            --text-main: #1d1d1f; /* 深灰黑主字體 */
-            --text-sub: #86868b;  /* 次要資訊字體 */
-            --accent-color: #007aff; /* iOS 藍色點綴 */
-            --accent-light: rgba(0, 122, 255, 0.1);
-            --rpe-color: #ff9500; /* 活力橘色 */
-            --rpe-light: rgba(255, 149, 0, 0.1);
-            --divider: rgba(0, 0, 0, 0.08); /* 淺色分隔線 */
-            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro TC", "PingFang TC", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        }
 
-        body, html {
+        body {
             margin: 0;
             padding: 0;
-            height: 100vh;
             background-color: var(--bg-color);
             color: var(--text-main);
             font-family: var(--font-family);
-            -ms-overflow-style: none;  
-            scrollbar-width: none;  
+            font-size: 16px;
+            line-height: 1.6;
+            /* 避免下拉的橡皮筋效應露出白底 */
             overscroll-behavior-y: none;
         }
 
-        body::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* 滾動容器設定 - 垂直滾動簡報 */
-        .scroll-container {
-            height: 100vh;
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory;
-            scroll-behavior: smooth;
-        }
-
-        /* 單頁 (Slide) 佈局 */
-        .page {
-            height: 100vh;
-            width: 100vw;
-            scroll-snap-align: start;
+        /* 頂部導覽列 (原生 App 質感: 毛玻璃效果) */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--nav-height) + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
+            background: var(--app-bar-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             display: flex;
             align-items: center;
-            justify-content: center;
-            position: relative;
-            padding: 40px;
+            justify-content: space-between;
+            padding-inline: 16px;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
         }
 
-        /* 16:9 簡報卡片容器 */
-        .slide-card {
-            width: 100%;
-            max-width: 1400px;
-            height: 85vh; /* 滿版高度比例 */
-            background-color: var(--card-bg);
-            border-radius: 32px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
-            display: flex;
-            flex-direction: row;
-            overflow: hidden;
-            padding: 40px;
-            gap: 50px; /* 照片與文字的間距 */
-        }
-
-        /* 左側：9:16 照片區 */
-        .photo-column {
-            height: 100%;
-            aspect-ratio: 9 / 16; /* 強制直式 9:16 比例 */
-            flex-shrink: 0;
-            background: linear-gradient(135deg, #e5e5ea 0%, #d1d1d6 100%);
-            border-radius: 24px;
+        .header-btn {
+            color: var(--ansi-white);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.05);
+            padding: 8px;
+            margin-left: -8px;
         }
-        .photo-text {
-            color: #666;
-            font-size: 1.1rem;
+
+        .header-btn:active {
+            opacity: 0.6;
+        }
+
+        .header-title {
+            font-weight: 600;
+            color: var(--ansi-white);
+            font-size: 17px;
+            flex-grow: 1;
             text-align: center;
-            line-height: 1.5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 20px;
-        }
-        .photo-text span { font-size: 3rem; }
-
-        /* 右側：內容區塊 */
-        .content-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            /* 修正：從 center 改為 flex-start，確保長內容不會被往上頂到看不見 */
-            justify-content: flex-start; 
-            overflow-y: auto;
-            padding-right: 20px;
-            padding-top: 10px;
-            padding-bottom: 20px;
         }
 
-        /* 頂部標題區 */
-        .header {
-            margin-bottom: 30px;
-            flex-shrink: 0;
+        /* 主要內容區 */
+        .main-content {
+            padding-top: calc(var(--nav-height) + env(safe-area-inset-top) + 16px);
+            padding-bottom: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom) + 20px);
+            padding-inline: 16px;
         }
-        .day-badge {
-            display: inline-block;
-            background: var(--accent-light);
-            color: var(--accent-color);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+
+        /* 文章 Meta 資訊 (經典 PTT 格式) */
+        .post-meta {
+            margin-bottom: 24px;
+            font-family: 'Courier New', Courier, monospace; /* Meta資訊保留等寬字體更對味 */
+        }
+
+        .meta-row {
+            display: flex;
+            margin-bottom: 4px;
+        }
+
+        .meta-key {
+            color: var(--text-dim);
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0 4px;
+            margin-right: 8px;
+        }
+
+        .meta-val {
+            color: var(--ansi-white);
+        }
+
+        .meta-val.board { color: var(--ansi-cyan); }
+        .meta-val.title { color: var(--ansi-yellow); font-weight: bold; }
+
+        /* 文章本體 */
+        .post-body {
+            margin-bottom: 32px;
+            word-wrap: break-word;
+        }
+
+        .hl-yellow { color: var(--ansi-yellow); font-weight: bold; }
+        .hl-cyan { color: var(--ansi-cyan); }
+        .hl-red { color: var(--ansi-red); }
+
+        h2 {
+            font-size: 18px;
+            color: var(--ansi-cyan);
+            border-left: 4px solid var(--ansi-cyan);
+            padding-left: 8px;
+            margin-top: 28px;
             margin-bottom: 12px;
         }
-        .sport-title {
-            font-size: 3.5rem; /* 簡報級大標題 */
-            font-weight: 800;
-            margin: 0 0 10px 0;
-            letter-spacing: 1px;
-            color: var(--text-main);
-        }
-        .datetime {
-            color: var(--text-sub);
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin: 0;
+
+        p {
+            margin-bottom: 16px;
+            text-align: justify;
         }
 
-        /* 強度指標 RPE */
-        .rpe-row {
-            display: inline-flex;
-            align-items: center;
-            gap: 15px;
-            background: var(--rpe-light);
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            width: fit-content;
-            flex-shrink: 0;
-        }
-        .rpe-label {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #d97706;
-        }
-        .rpe-score {
-            font-weight: 800;
-            font-size: 1.5rem;
-            color: var(--rpe-color);
-        }
-
-        /* 分隔線 */
         .divider {
-            height: 1px;
-            background-color: var(--divider);
-            margin: 15px 0;
-            flex-shrink: 0;
+            color: var(--ansi-green);
+            margin: 24px 0;
+            font-family: monospace;
         }
 
-        /* 內容區塊 */
-        .info-block {
-            margin-bottom: 15px;
-            flex-shrink: 0;
-        }
-        .info-block h3 {
-            font-size: 1.1rem;
-            color: var(--accent-color);
-            margin: 0 0 8px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-        }
-        .info-block p {
-            font-size: 1.25rem;
-            line-height: 1.7;
-            margin: 0;
-            color: var(--text-main);
-            font-weight: 400;
+        /* 推文區 */
+        .comments {
+            margin-top: 24px;
         }
 
-        /* 底部提示滑動動畫 */
-        .scroll-hint {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.9rem;
+        .comment {
+            display: flex;
+            align-items: flex-start;
+            padding: 6px 0;
+            font-size: 15px;
+        }
+
+        .push-tag {
+            font-weight: bold;
+            margin-right: 8px;
+            min-width: 20px;
+        }
+        
+        .push-tag.good { color: var(--ansi-green); }
+        .push-tag.bad { color: var(--ansi-red); }
+        .push-tag.arrow { color: var(--text-dim); }
+
+        .push-user {
+            color: var(--ansi-yellow);
+            margin-right: 8px;
             font-weight: 500;
-            color: var(--text-sub);
-            opacity: 0.8;
-            animation: bounce 2s infinite;
         }
 
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
-            40% { transform: translateY(-10px) translateX(-50%); }
-            60% { transform: translateY(-5px) translateX(-50%); }
+        .push-content {
+            color: var(--ansi-white);
+            flex-grow: 1;
         }
 
-        /* 隱藏內容區滾動條 (但保留滑動功能) */
-        .content-area::-webkit-scrollbar { display: none; }
+        .push-time {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        /* 底部互動列 (原生 App 底部操作) */
+        .app-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--app-bar-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 100;
+        }
+
+        .footer-inner {
+            height: var(--bottom-bar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+        }
+
+        .input-box {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            color: var(--text-dim);
+            font-size: 15px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--ansi-white);
+            font-size: 20px;
+            padding: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-<div class="scroll-container">
+    <header class="app-header">
+        <div class="header-btn">‹ Gossiping</div>
+        <div class="header-title">文章詳情</div>
+        <div class="header-btn" style="margin-left: 0; margin-right: -8px;">⋯</div>
+    </header>
 
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 3/29<br>直式照片 (9:16)</div>
+    <main class="main-content">
+        <div class="post-meta">
+            <div class="meta-row"><span class="meta-key">作者</span><span class="meta-val">InfoSecO (資安老司機)</span></div>
+            <div class="meta-row"><span class="meta-key">看板</span><span class="meta-val board">Gossiping</span></div>
+            <div class="meta-row"><span class="meta-key">標題</span><span class="meta-val title">[爆卦] Carbanak駭客事件衝擊與啟示：10億歐元消失</span></div>
+            <div class="meta-row"><span class="meta-key">時間</span><span class="meta-val">Thu Jun 25 16:19:00 2026</span></div>
+        </div>
+
+        <div class="post-body">
+            <h2>1. 經濟損失與影響 (Economic Loss & Impact)</h2>
+            <p><span class="hl-yellow">史無前例的吸金規模：</span>這場浩劫波及全球超過 40 個國家、100 家以上的金融機構，總損失高達約 <span class="hl-red">10 億歐元（約 11 億美元）</span>。這證明了 APT 攻擊已經具備「重創單一產業經濟體」的核彈級威力。</p>
+            <p><span class="hl-yellow">外溢成本難以估計：</span>除了直接被盜領的現金與轉帳，銀行後續為了修補漏洞、全面升級資安架構、支付罰款以及應對訴訟，所付出的<span class="hl-cyan">「隱性經濟成本」</span>遠大於被偷走的表面金額。</p>
+
+            <h2>2. 客戶信任危機 (Customer Trust Crisis)</h2>
+            <p><span class="hl-yellow">動搖金融體系根本：</span>金融業的基石是「信任」。當提款機會在<span class="hl-red">無人操作下自動吐鈔</span>，當帳戶裡的數字可以被駭客隨意竄改，大眾對銀行系統的安全信心會瞬間崩盤。</p>
+            <p><span class="hl-yellow">品牌聲譽的不可逆傷害：</span>一旦銀行被標上「內部控管鬆散」、「連自己的錢都守不住」的標籤，不僅會流失高資產客戶，後續要重建品牌信任往往需要花費數年甚至十幾年的時間。</p>
+
+            <h2>3. 法律與國際執法合作 (Legal & International Cooperation)</h2>
+            <p><span class="hl-yellow">跨國網路犯罪的管轄權困境：</span>主嫌在東歐，跳板伺服器在中國或美國，受害銀行在台灣或德國。傳統法律在面對這種無國界犯罪時，常面臨<span class="hl-cyan">「抓不到、辦不了、引渡難」</span>的窘境。</p>
+            <p><span class="hl-yellow">公私部門聯手的成功範例：</span>此案最終仰賴歐洲刑警組織（Europol）、國際刑警組織與民間資安公司（如卡巴斯基）的情報共享，才成功在西班牙逮捕主嫌。這顯示未來的跨國打擊必須依賴<span class="hl-cyan">「情報共享協定」</span>與<span class="hl-cyan">「跨國聯合執法」</span>。</p>
+
+            <h2>4. 對企業與社會的啟示 (Implications)</h2>
+            <p><span class="hl-yellow">打破邊界迷思，轉向「零信任 (Zero Trust)」：</span>過去銀行以為把防火牆建好就安全了，但 Carbanak 證明了<span class="hl-red">威脅往往來自內部（員工點擊釣魚信件）</span>。企業必須假設「內部網路已經被滲透」，針對每個權限和異常操作進行嚴格的微隔離與動態認證。</p>
+            <p><span class="hl-yellow">人，始終是資安最弱的一環：</span>再強大的防禦系統，也擋不住員工的一個滑鼠點擊。定期的社交工程演練與資安意識培訓，是防禦 APT 攻擊的最後一道也是最重要的一道防線。</p>
+
+            <div class="divider">--<br>※ 發信站: 批踢踢實業坊(ptt.cc), 來自: 211.23.144.111 (臺灣)<br>※ 文章網址: https://www.ptt.cc/bbs/Gossiping/M.1719303540.A.B1C.html</div>
+        </div>
+
+        <div class="comments">
+            <div class="comment">
+                <span class="push-tag good">推 </span><span class="push-user">鄉民A</span><span class="push-content">: 提款機自己吐鈔太玄了吧</span><span class="push-time"> 06/25 16:22</span>
             </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 1</div>
-                    <h1 class="sport-title">羽球雙打</h1>
-                    <p class="datetime">2026/3/29 12:00-14:00</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">4 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>羽球 2 小時不間斷。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>運動後手非常酸，且隔天腳也酸到不行，推測是太久沒運動所致。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>技術與心得</h3>
-                    <p>察覺到自己在打球時的姿勢可能有錯誤，需要調整。整體感覺很喜歡，朋友也很耐心教導我，是一次愉快的運動體驗。</p>
-                </div>
+            <div class="comment">
+                <span class="push-tag arrow">→ </span><span class="push-user">資安菜鳥</span><span class="push-content">: 社交工程真的很難防，一不小心就點下去了</span><span class="push-time"> 06/25 16:25</span>
+            </div>
+            <div class="comment">
+                <span class="push-tag good">推 </span><span class="push-user">ZeroTrust</span><span class="push-content">: 零信任架構推推，早該全面導入了</span><span class="push-time"> 06/25 16:30</span>
+            </div>
+            <div class="comment">
+                <span class="push-tag bad">噓 </span><span class="push-user">路人甲</span><span class="push-content">: 密碼還在設123456的阿北表示：</span><span class="push-time"> 06/25 16:45</span>
+            </div>
+            <div class="comment">
+                <span class="push-tag good">推 </span><span class="push-user">鄉民B</span><span class="push-content">: 損失10億歐元...這銀行高層大概全黑了</span><span class="push-time"> 06/25 17:01</span>
             </div>
         </div>
-        <div class="scroll-hint">向下滑動查看下一頁 ↓</div>
-    </section>
+    </main>
 
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 4/5<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 2</div>
-                    <h1 class="sport-title">跑步＋走路</h1>
-                    <p class="datetime">2026/4/5 21:41-23:00</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">跑 6/10 走 1/10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>以八分速跑 12 分鐘，接著走路 1 小時。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>跑步時感覺非常喘，小腿有微緊的狀況，可能與運動前沒有充分熱身有關。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>運動心得</h3>
-                    <p>其實本身不喜歡跑步，是因為朋友約一起跑想說就從今天開始紀錄。穿著 adizero evo sl 跑鞋，結果只跑了 1.5 公里就不行了，覺得自己體力超弱。</p>
-                </div>
-            </div>
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <button class="action-btn">👍</button>
+            <button class="action-btn">👎</button>
+            <div class="input-box">新增推文...</div>
+            <button class="action-btn">⇪</button>
         </div>
-    </section>
+    </footer>
 
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 4/6<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 3</div>
-                    <h1 class="sport-title">走路</h1>
-                    <p class="datetime">2026/4/6 20:00-20:30</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">1 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>走路半小時。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>因為前一天跑步沒熱身也沒拉筋，今天腳超級酸、超級痛。本來今天想跑起來，但因為肌肉痠痛完全沒辦法跑。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>技術與心得</h3>
-                    <p>透過這次的身體反饋，深刻體悟到「運動一定要記得熱身和拉筋」的重要性。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 4/8<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 4</div>
-                    <h1 class="sport-title">跑步機爬坡</h1>
-                    <p class="datetime">2026/4/8 18:25-18:45</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">4 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>坡度設定 10、速度 4.5，持續 20 分鐘。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>爬坡的當下覺得很累、很熱，但是對身體沒什麼負擔，運動後沒有覺得特別酸痛。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>運動心得</h3>
-                    <p>在跑步機上跟去外面慢跑比起來偏向無聊，但優點是有冷氣吹，而且旁邊有其他陌生人一起運動，反而會激勵到自己。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 4/11<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 5</div>
-                    <h1 class="sport-title">羽球單打</h1>
-                    <p class="datetime">2026/4/11 16:00-18:00</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">3 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>羽球 2 小時不間斷。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>這次打完球後手部會感到酸痛，但整體的運動感受比之前舒服很多。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>技術進步與心得</h3>
-                    <p>感覺比起上次進步了許多，已經能順利打到後面的球，帶來了成就感。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 4/12<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 6</div>
-                    <h1 class="sport-title">居家瑜珈</h1>
-                    <p class="datetime">2026/4/12 01:00-01:30</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">3 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>跟著 YouTube 影片學瑜珈，進行伸展與核心訓練。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>發現自己的筋本身就蠻軟的，但是在核心肌群方面很差，無法支撐太久，這是未來需要加強的地方。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>運動心得</h3>
-                    <p>蠻喜歡瑜伽這項運動的，優點是不需要出門，在家裡就可以達到運動的效果。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 4/18<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 7</div>
-                    <h1 class="sport-title">白沙屯媽祖進香</h1>
-                    <p class="datetime">2026/4/18 09:25-16:30</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">6 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>從彰化徒步走到台中，中間休息 1 小時，平均配速為 9 分/公里。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>幾乎全程都是走路，大約走兩三小時後腳開始酸。中途休息後要再起身繼續走時，出現腳軟差點走不動的狀況。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>運動心得</h3>
-                    <p>前一晚只睡了一小時，睡眠不足對體力有明顯影響。不過可能剛好這陣子有開始培養運動習慣，整體負荷還算可以接受，隔天沒有痠痛感。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 5/10<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 8</div>
-                    <h1 class="sport-title">羽球雙打</h1>
-                    <p class="datetime">2026/5/10 13:00-16:00</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">4 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>羽球 3 小時不間斷，與一群朋友輪流對打。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>運動過程很累、很喘，練完回家後手非常酸。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>技術與心得</h3>
-                    <p>這次特別練習了「殺球的揮拍動作」，雖然剛學還沒辦法馬上正確應用。此外也觀察到，打球厲害的人幾乎可以站著不動就能打到球，是很棒的學習目標。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 5/28<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 9</div>
-                    <h1 class="sport-title">慢跑</h1>
-                    <p class="datetime">2026/5/28 18:30-20:30</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">8 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>從頭到尾維持 8-9 分速跑步。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>過程中非常累但不會喘，大約跑到 3-4 公里後開始覺得受不了，會一直出現撐不下去的感覺。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>心理狀態與心得</h3>
-                    <p>這次靠著意志力強迫自己一定要繼續跑完。發現自己有慢慢愛上跑步了！而且看到河濱公園有很多人在一起跑，覺得自己並不孤單。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="page">
-        <div class="slide-card">
-            <div class="photo-column">
-                <div class="photo-text"><span>📷</span> 5/30<br>直式照片 (9:16)</div>
-            </div>
-            <div class="content-area">
-                <div class="header">
-                    <div class="day-badge">Day 10</div>
-                    <h1 class="sport-title">走路</h1>
-                    <p class="datetime">2026/5/30 10:00-14:00</p>
-                </div>
-                <div class="rpe-row">
-                    <span class="rpe-label">強度指標 (RPE)</span>
-                    <span class="rpe-score">2 / 10</span>
-                </div>
-                <div class="info-block">
-                    <h3>訓練內容</h3>
-                    <p>悠閒散步 4 小時，中間包含吃午餐 1 小時。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>身體對話</h3>
-                    <p>是一次很舒服的散步，身體有稍微流汗，但完全不會覺得累。</p>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <h3>運動心得</h3>
-                    <p>因為要陪媽媽玩「皮克敏」遊戲所以被抓去散步，意外發現媽媽的體力很好，比我還會走路。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-</div>
-
+    <script>
+        // 加入簡單的觸控回饋，增強原生 App 質感
+        document.querySelectorAll('.action-btn, .input-box').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.style.opacity = '0.5';
+            });
+            el.addEventListener('touchend', function() {
+                this.style.opacity = '1';
+            });
+        });
+    </script>
 </body>
 </html>
